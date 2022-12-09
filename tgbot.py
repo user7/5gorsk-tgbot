@@ -3,10 +3,16 @@
 import asyncio
 import telegram
 
+savedToken = ''
+def getToken():
+    global savedToken
+    if savedToken == '':
+        with open('token.txt') as f:
+            savedToken = f.readline().rstrip()
+    return savedToken
+
 async def main():
-    token = ""
-    with open('token.txt') as f:
-        token = f.readline().rstrip()
+    token = getToken()
     print("token {t}".format(t = token))
     bot = telegram.Bot(token)
     async with bot:

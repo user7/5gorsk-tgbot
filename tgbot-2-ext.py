@@ -1,5 +1,6 @@
 import logging
 from telegram import Update
+from telegram import User
 from telegram.ext import filters
 from telegram.ext import MessageHandler
 from telegram.ext import ApplicationBuilder
@@ -16,7 +17,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print("Message from: " + str(update.message.from_user))
-    await context.bot.send_message(chat_id = update.effective_chat.id, text = update.message.text)
+    print("Effective chat: " + str(update.effective_chat))
+    chat_id = update.effective_chat.id
+    chat_id = 964632818
+    await context.bot.send_message(chat_id = chat_id, text = update.message.text)
 
 if __name__ == '__main__':
     with open('token.txt') as f:

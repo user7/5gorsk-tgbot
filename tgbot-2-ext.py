@@ -15,6 +15,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id = update.effective_chat.id, text = "I'm a bot, talk!")
 
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("Message from: " + str(update.message.from_user))
     await context.bot.send_message(chat_id = update.effective_chat.id, text = update.message.text)
 
 if __name__ == '__main__':

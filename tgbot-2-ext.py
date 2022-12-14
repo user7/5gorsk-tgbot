@@ -18,9 +18,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print("Message from: " + str(update.message.from_user))
     print("Effective chat: " + str(update.effective_chat))
-    chat_id = update.effective_chat.id
-    chat_id = 964632818
-    await context.bot.send_message(chat_id = chat_id, text = update.message.text)
+    chat_id1 = update.effective_chat.id
+    chat_id2 = 964632818
+    await context.bot.send_message(chat_id = chat_id1, text = update.message.text)
+    if chat_id1 != chat_id2:
+        await context.bot.send_message(
+                chat_id = chat_id2,
+                text = "message to {}: {}".format(chat_id1, update.message.text))
 
 if __name__ == '__main__':
     with open('token.txt') as f:

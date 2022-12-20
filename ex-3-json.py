@@ -24,4 +24,5 @@ if jold != jnew:
     print(f'comparison failed:\n\na: {jold}\n\nb: {jnew}\n')
     exit(1)
 else:
+    print(f'old.a={old["a"]}\n');
     print('ok')

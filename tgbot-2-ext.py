@@ -23,7 +23,7 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print("Effective chat: " + str(update.effective_chat))
     chat_id1 = update.effective_chat.id
     await context.bot.send_message(chat_id = chat_id1, text = update.message.text)
-    if not config.admins[chat_id1]:
+    if str(chat_id1) not in config["admins"]:
         await context.bot.send_message(
                 chat_id = 964632818,
                 text = "message to {}: {}".format(chat_id1, update.message.text))

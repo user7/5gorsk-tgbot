@@ -2,6 +2,8 @@ import logging
 import json
 from telegram import Update
 from telegram import User
+from telegram import ReplyKeyboardMarkup
+from telegram import KeyboardButton
 from telegram.ext import filters
 from telegram.ext import MessageHandler
 from telegram.ext import ApplicationBuilder
@@ -17,6 +19,18 @@ config = {}
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id = update.effective_chat.id, text = "I'm a bot, talk!")
+
+async def water(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # create buttons
+    b1 = KeyboardButton(text = "Налево")
+    b2 = KeyboardButton(text = "Направо")
+    b3 = KeyboardButton(text = "Назад")
+    k = ReplyKeyboardMarkup(keyboard = [[b1, b2], [b3]], one_time_keyboard = True)
+    await context.bot.send_message(
+            chat_id = update.effective_chat.id,
+            text = "Choose your action",
+            reply_markup = k
+        )
 
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print("Message from: " + str(update.message.from_user))
@@ -36,8 +50,10 @@ if __name__ == '__main__':
     config = conf_load('config.json')
     application = ApplicationBuilder().token(config["token"]).build()
     start_handler = CommandHandler('start', start)
+    water_handler = CommandHandler('water', water)
     echo_handler = MessageHandler(filters.TEXT & (~filters.COMMAND), echo)
     application.add_handler(start_handler)
+    application.add_handler(water_handler)
     application.add_handler(echo_handler)
     application.run_polling()
 

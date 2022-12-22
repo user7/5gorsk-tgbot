@@ -9,3 +9,4 @@ w.apt = 1
 w.cold = 2
 print(vars(w))
 print(w.hot)
+print(isinstance(w, WaterState))

@@ -1,5 +1,9 @@
 import json
 from smtplib import SMTP_SSL
+import sys
+import sysaudit
+from email.mime.text import MIMEText
+from email import utils
 
 def conf_load(filename):
     with open(filename, 'r', encoding = 'utf-8') as f:
@@ -11,11 +15,18 @@ email_port = int(c["port"])
 email_login = c["login"]
 email_pass = c["pass"]
 
+text = "supertest"
+if len(sys.argv) > 1:
+    text = sys.argv[1]
+
 with SMTP_SSL(host = email_host, port = email_port) as smtp:
+    fro = utils.formataddr(("Неодим 2", email_login), charset='utf-8')
+    to = "brankovic@yandex.ru"
     print(smtp.login(email_login, email_pass))
-    print(smtp.sendmail(
-        email_login, # same as sending address
-        ["brankovic@ya.ru"],
-        "Hello test 10"))
+    msg = MIMEText(text)
+    msg['Subject'] = 'test subject'
+    msg['From'] = fro
+    msg['To'] = to
+    print(smtp.sendmail(fro, to, msg.as_string()))
     print(smtp.quit())
 

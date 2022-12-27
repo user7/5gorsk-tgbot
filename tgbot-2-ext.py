@@ -25,73 +25,80 @@ config = None
 with open('config.json', 'r', encoding = 'utf-8') as f:
     config = json.load(f)
 
-cmd_contacts = "✉️ Связаться с нами"
-cmd_maint = "🏠Обслуживание дома"
-cmd_edc = "☎️ ЕДЦ ЖКХ"
-cmd_tariffs = "📃Тарифы 2022"
-cmd_domofon = "📲 Домофон"
-cmd_water_zayava = "📄Заявления в бухгалтерию по воде"
-cmd_water_meters = "💧Передать показания счетчиков воды"
-cmd_cancel = "Отмена"
-cmd_yes = "Да"
-cmd_no = "Нет"
+cmd_contacts = '✉️ Связаться с нами'
+cmd_maint = '🏠Обслуживание дома'
+cmd_edc = '☎️ ЕДЦ ЖКХ'
+cmd_tariffs = '📃Тарифы 2022'
+cmd_domofon = '📲 Домофон'
+cmd_water_zayava = '📄Заявления в бухгалтерию по воде'
+cmd_water_meters = '💧Передать показания счетчиков воды'
+cmd_cancel = 'Отмена'
+cmd_yes = 'Да'
+cmd_no = 'Нет'
 
-msg_enter_apt = "Номер квартиры:"
-msg_enter_cold = "Холодная вода:"
-msg_enter_hot = "Горячая вода:"
-msg_welcome = "Поздравляем! Вы подписались на бот ЖСК Пятигорск."
+msg_enter_apt = 'Номер квартиры:'
+msg_enter_cold = 'Холодная вода:'
+msg_enter_hot = 'Горячая вода:'
+msg_welcome = 'Поздравляем! Вы подписались на бот ЖСК Пятигорск.'
 
-email = "3909322@mail.ru"
+email = '3909322@mail.ru'
 
-msg_contacts = f"""
+msg_contacts = f'''
 ☎Телефон +74953909322
 ⏰Часы работы Правления: каждый четверг с 18.00 до 20.00
 📨E-mail: {email}
-""".strip()
+'''.strip()
 
-msg_maint = f"""
-🏠Обслуживающая компания ООО "Доминвест": +74993756563 круглосуточно.
+msg_maint = f'''
+🏠Обслуживающая компания ООО 'Доминвест': +74993756563 круглосуточно.
 ⚡️Электрик
 🚰Сантехник
 🗑Засор мусоропровода
 🧹Уборщик
 ❗️Работы на территории общедомового имущества проводятся БЕСПЛАТНО.
 💰Личное имущество собственников обслуживается по утвержденному тарифу. Тарифы уточняйте по телефону!💸
-""".strip()
+'''.strip()
 
 # TODO second message must be https://gorod.mos.ru/
-msg_edc = f"""
+msg_edc = f'''
 💻Единый диспетчерский центр (ЕДЦ) ЖКХ: +74955395353, аналог портала Наш город
 ❗️Заявки по любым вопросам, связанным с обслуживанием дома, если это не в компетенции Доминвест +74993756563❗️
 🗑Забиты мусорки у дома
 ☃️Сугробы на стоянке
 🌱Обрезка кустов, сухостой, падающие деревья
 🌞Нет освещения у дома
-""".strip()
+'''.strip()
 
-msg_tariffs = "jpeg" # TODO
+msg_tariffs = 'jpeg' # TODO
 
-msg_domofon = f"""
+msg_domofon = f'''
 📲Обслуживание домофона +74950880888
 🛠Заказ/ремонт ключей домофона +7495631193
-""".strip()
+'''.strip()
 
 # TODO pdf, pdf
-msg_water_zayava = f"""
+msg_water_zayava = f'''
 ❗️Для тех, кто не проживает, или забывает подать показания, выше два бланка, которые необходимо предоставить в бухгалтерию.
 📥По почте {email} или в ящики Правления на 1-х этажах.📪
 📝Заявление можно написать в произвольной форме от руки и прислать фотографию.
-""".strip()
+'''.strip()
 
-keyboard_main = ReplyKeyboardMarkup(keyboard = [
-    [KeyboardButton(cmd_contacts)],
-    [KeyboardButton(cmd_maint), KeyboardButton(cmd_edc)],
-    [KeyboardButton(cmd_tariffs), KeyboardButton(cmd_domofon)],
-    [KeyboardButton(cmd_water_zayava), KeyboardButton(cmd_water_meters)],
-])
+keyboard_main = ReplyKeyboardMarkup(
+    keyboard = [
+        [KeyboardButton(cmd_contacts)],
+        [KeyboardButton(cmd_maint), KeyboardButton(cmd_edc)],
+        [KeyboardButton(cmd_tariffs), KeyboardButton(cmd_domofon)],
+        [KeyboardButton(cmd_water_zayava), KeyboardButton(cmd_water_meters)],
+    ],
+    resize_keyboard = True)
 
-keyboard_cancel = ReplyKeyboardMarkup(keyboard = [[KeyboardButton(cmd_cancel)]])
-keyboard_confirm = ReplyKeyboardMarkup(keyboard = [[KeyboardButton(cmd_yes), KeyboardButton(cmd_no)]])
+keyboard_cancel = ReplyKeyboardMarkup(
+    keyboard = [[KeyboardButton(cmd_cancel)]],
+    resize_keyboard = True)
+
+keyboard_confirm = ReplyKeyboardMarkup(
+    keyboard = [[KeyboardButton(cmd_yes), KeyboardButton(cmd_no)]],
+    resize_keyboard = True)
 
 # chat_id -> state
 chat_state = {}
@@ -105,7 +112,7 @@ class StateWater:
         self.hot = None
 
     def __str__(self):
-        return f"StateWater({self.apt}, {self.cold}, {self.hot})"
+        return f'StateWater({self.apt}, {self.cold}, {self.hot})'
 
     def is_last_step(self):
         return None not in (self.apt, self.cold, self.hot)
@@ -117,19 +124,27 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup = keyboard_main)
 
 def record_water(user, state):
-    email = config['email']
-    login = email['login']
-    with SMTP_SSL(host = email['host'], port = int(email['port'])) as smtp:
-        smtp.login(login, email['pass'])
-        msg = MIMEText('Это сообшение от телеграм бота. Пользователь {user} передал показания воды.')
-        msg['Subject'] = f"вода {state.apt}: хол {state.cold}, гор {state.hot}"
-        sender = utils.formataddr(('Бот Пятигорск', login), charset='utf-8')
+    good_names = [w for w in [user.first_name, user.last_name, f'(id {user.id})'] if w is not None]
+    full_name = ' '.join(good_names)
+    try:
+        email = config['email']
+        host = email['host']
+        port = email['port']
+        login = email['login']
+        pass_ = email['pass']
         recepient = email['recepient']
-        msg['From'] = sender
-        msg['To'] = recepient
-        print(smtp.sendmail(sender, recepient, msg.as_string()))
-        smtp.quit()
-    # TODO store in sqlite, ensure email has been sent
+        sender = utils.formataddr(('Бот Пятигорск', login), charset='utf-8')
+        with SMTP_SSL(host = host, port = port) as smtp:
+            smtp.login(login, pass_)
+            msg = MIMEText(f'Это сообшение от телеграм бота. Пользователь {full_name} передал показания воды для квартиры {state.apt}. Холодная вода {state.cold}, горячая вода {state.hot}.')
+            msg['Subject'] = f'вода {state.apt}: {state.cold}, {state.hot}'
+            msg['From'] = sender
+            msg['To'] = recepient
+            smtp.sendmail(sender, recepient, msg.as_string())
+            print(f'water record sent {full_name} {state}')
+            smtp.quit()
+    except SMTPException as e:
+        print(f'error sending water record {full_name} {state}: {e}')
 
 async def respond(update: Update, context: ContextTypes.DEFAULT_TYPE):
     cmd = update.message.text
@@ -164,15 +179,14 @@ async def respond(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply = msg_enter_hot
         elif state.hot is None:
             state.hot = cmd
-            reply = f"Квартира {state.apt}, холодная вода {state.cold}, горячая вода {state.hot}, всё верно?"
+            reply = f'Квартира {state.apt}, холодная вода {state.cold}, горячая вода {state.hot}, всё верно?'
         elif cmd == cmd_yes:
-            record_water(update.user, state)
+            record_water(update.message.from_user, state)
             newstate = state_main
-            reply = "Принято!"
+            reply = 'Принято!'
         else:
             newstate = StateWater()
     else:
-        reply = "Неизвестная команда"
         newstate = state_main
 
     keyboard = None
@@ -185,10 +199,11 @@ async def respond(update: Update, context: ContextTypes.DEFAULT_TYPE):
             keyboard = keyboard_cancel
     chat_state[chat_id] = newstate
 
-    await context.bot.send_message(chat_id = chat_id, text = reply, reply_markup = keyboard)
+    if reply is not None:
+        await context.bot.send_message(chat_id = chat_id, text = reply, reply_markup = keyboard)
 
 if __name__ == '__main__':
-    application = ApplicationBuilder().token(config["token"]).build()
+    application = ApplicationBuilder().token(config['token']).build()
     start_handler = CommandHandler('start', start)
     common_handler = MessageHandler(filters.TEXT & (~filters.COMMAND), respond)
     application.add_handler(start_handler)

@@ -141,10 +141,10 @@ def record_water(user, state):
             msg['From'] = sender
             msg['To'] = recepient
             smtp.sendmail(sender, recepient, msg.as_string())
-            print(f'water record sent {full_name} {state}')
+            logging.info(f'water record sent {full_name} {state}')
             smtp.quit()
     except SMTPException as e:
-        print(f'error sending water record {full_name} {state}: {e}')
+        logging.info(f'error sending water record {full_name} {state}: {e}')
 
 async def respond(update: Update, context: ContextTypes.DEFAULT_TYPE):
     cmd = update.message.text

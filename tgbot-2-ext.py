@@ -1,5 +1,6 @@
 import logging
 import json
+
 from telegram import Update
 from telegram import User
 from telegram import ReplyKeyboardMarkup
@@ -10,12 +11,19 @@ from telegram.ext import ApplicationBuilder
 from telegram.ext import ContextTypes
 from telegram.ext import CommandHandler
 
+from smtplib import SMTP_SSL
+from smtplib import SMTPException
+from email.mime.text import MIMEText
+from email import utils
+
 logging.basicConfig(
     format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level = logging.INFO
 )
 
-config = {}
+config = None
+with open('config.json', 'r', encoding = 'utf-8') as f:
+    config = json.load(f)
 
 cmd_contacts = "✉️ Связаться с нами"
 cmd_maint = "🏠Обслуживание дома"
@@ -108,9 +116,20 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             text = msg_welcome,
             reply_markup = keyboard_main)
 
-def record_water(state):
-    # TODO store in sqlite, ensure sending email
-    print(f"+ water record {state.apt} {state.cold} {state.hot}")
+def record_water(user, state):
+    email = config['email']
+    login = email['login']
+    with SMTP_SSL(host = email['host'], port = int(email['port'])) as smtp:
+        smtp.login(login, email['pass'])
+        msg = MIMEText('Это сообшение от телеграм бота. Пользователь {user} передал показания воды.')
+        msg['Subject'] = f"вода {state.apt}: хол {state.cold}, гор {state.hot}"
+        sender = utils.formataddr(('Бот Пятигорск', login), charset='utf-8')
+        recepient = email['recepient']
+        msg['From'] = sender
+        msg['To'] = recepient
+        print(smtp.sendmail(sender, recepient, msg.as_string()))
+        smtp.quit()
+    # TODO store in sqlite, ensure email has been sent
 
 async def respond(update: Update, context: ContextTypes.DEFAULT_TYPE):
     cmd = update.message.text
@@ -147,7 +166,7 @@ async def respond(update: Update, context: ContextTypes.DEFAULT_TYPE):
             state.hot = cmd
             reply = f"Квартира {state.apt}, холодная вода {state.cold}, горячая вода {state.hot}, всё верно?"
         elif cmd == cmd_yes:
-            record_water(state)
+            record_water(update.user, state)
             newstate = state_main
             reply = "Принято!"
         else:
@@ -168,12 +187,7 @@ async def respond(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await context.bot.send_message(chat_id = chat_id, text = reply, reply_markup = keyboard)
 
-def conf_load(filename):
-    with open(filename, 'r', encoding = 'utf-8') as f:
-        return json.load(f)
-
 if __name__ == '__main__':
-    config = conf_load('config.json')
     application = ApplicationBuilder().token(config["token"]).build()
     start_handler = CommandHandler('start', start)
     common_handler = MessageHandler(filters.TEXT & (~filters.COMMAND), respond)

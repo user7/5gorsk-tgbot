@@ -25,10 +25,18 @@ config = None
 with open('config.json', 'r', encoding = 'utf-8') as f:
     config = json.load(f)
 
+class PhotoReply:
+    def __init__(self, path):
+        self.path = path
+
+class DocReply:
+    def __init__(self, path):
+        self.path = path
+
 cmd_contacts = '✉️ Связаться с нами'
 cmd_maint = '🏠Обслуживание дома'
 cmd_edc = '☎️ ЕДЦ ЖКХ'
-cmd_tariffs = '📃Тарифы 2022'
+cmd_tariffs = '📃Тарифы 2023'
 cmd_domofon = '📲 Домофон'
 cmd_water_zayava = '📄Заявления в бухгалтерию по воде'
 cmd_water_meters = '💧Передать показания счетчиков воды'
@@ -39,13 +47,14 @@ cmd_no = 'Нет'
 msg_enter_apt = 'Номер квартиры:'
 msg_enter_cold = 'Холодная вода:'
 msg_enter_hot = 'Горячая вода:'
-msg_welcome = 'Поздравляем! Вы подписались на бот ЖСК Пятигорск.'
+msg_welcome = 'Поздравляем, Вы подписались на бот ЖСК Пятигорск!'
+msg_need_number = 'Нужно ввести число!'
 
 email = '3909322@mail.ru'
 
 msg_contacts = f'''
-☎Телефон +74953909322
-⏰Часы работы Правления: каждый четверг с 18.00 до 20.00
+☎Телефон правления +74953909322
+⏰Приёмные часы: вторник, четверг с 18.00 до 20.00
 📨E-mail: {email}
 '''.strip()
 
@@ -59,29 +68,37 @@ msg_maint = f'''
 💰Личное имущество собственников обслуживается по утвержденному тарифу. Тарифы уточняйте по телефону!💸
 '''.strip()
 
-# TODO second message must be https://gorod.mos.ru/
-msg_edc = f'''
+msg_edc = [
+    f'''
 💻Единый диспетчерский центр (ЕДЦ) ЖКХ: +74955395353, аналог портала Наш город
 ❗️Заявки по любым вопросам, связанным с обслуживанием дома, если это не в компетенции Доминвест +74993756563❗️
 🗑Забиты мусорки у дома
 ☃️Сугробы на стоянке
 🌱Обрезка кустов, сухостой, падающие деревья
 🌞Нет освещения у дома
-'''.strip()
+'''.strip(),
 
-msg_tariffs = 'jpeg' # TODO
+    'https://gorod.mos.ru/'
+]
+
+msg_tariffs = [
+    PhotoReply(config['tariffs']),
+    '👩🏼‍🌾ГКУ ГЦЖС - http://www.subsident.ru/ Вся информация о субсидиях и льготах в сфере ЖКХ на территории Москвы.'
+]
 
 msg_domofon = f'''
 📲Обслуживание домофона +74950880888
-🛠Заказ/ремонт ключей домофона +7495631193
+🛠Заказ/ремонт ключей домофона +74956311931
 '''.strip()
 
-# TODO pdf, pdf
-msg_water_zayava = f'''
+msg_water_zayava = [
+    [DocReply(f) for f in config['zayavas']],
+    f'''
 ❗️Для тех, кто не проживает, или забывает подать показания, выше два бланка, которые необходимо предоставить в бухгалтерию.
 📥По почте {email} или в ящики Правления на 1-х этажах.📪
 📝Заявление можно написать в произвольной форме от руки и прислать фотографию.
 '''.strip()
+]
 
 keyboard_main = ReplyKeyboardMarkup(
     keyboard = [
@@ -137,7 +154,7 @@ def record_water(user, state):
         with SMTP_SSL(host = host, port = port) as smtp:
             smtp.login(login, pass_)
             msg = MIMEText(f'Это сообшение от телеграм бота. Пользователь {full_name} передал показания воды для квартиры {state.apt}. Холодная вода {state.cold}, горячая вода {state.hot}.')
-            msg['Subject'] = f'вода {state.apt}: {state.cold}, {state.hot}'
+            msg['Subject'] = f'вода кв {state.apt}, хол {state.cold}, гор {state.hot}'
             msg['From'] = sender
             msg['To'] = recepient
             smtp.sendmail(sender, recepient, msg.as_string())
@@ -145,6 +162,13 @@ def record_water(user, state):
             smtp.quit()
     except SMTPException as e:
         logging.info(f'error sending water record {full_name} {state}: {e}')
+
+def check_input_int(input_, reply_cur, reply_next):
+    try:
+        i = int(input_)
+        return (i, reply_next)
+    except:
+        return (None, [msg_need_number, reply_cur])
 
 async def respond(update: Update, context: ContextTypes.DEFAULT_TYPE):
     cmd = update.message.text
@@ -154,6 +178,7 @@ async def respond(update: Update, context: ContextTypes.DEFAULT_TYPE):
     state = chat_state[chat_id]
     reply = None
     newstate = state_main
+
     if cmd == cmd_contacts:
         reply = msg_contacts
     elif cmd == cmd_maint:
@@ -172,25 +197,23 @@ async def respond(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif isinstance(state, StateWater):
         newstate = state
         if state.apt is None:
-            state.apt = cmd
-            reply = msg_enter_cold
+            (state.apt, reply) = check_input_int(cmd, msg_enter_apt, msg_enter_cold)
         elif state.cold is None:
-            state.cold = cmd
-            reply = msg_enter_hot
+            (state.cold, reply) = check_input_int(cmd, msg_enter_cold, msg_enter_hot)
         elif state.hot is None:
-            state.hot = cmd
-            reply = f'Квартира {state.apt}, холодная вода {state.cold}, горячая вода {state.hot}, всё верно?'
-        elif cmd == cmd_yes:
-            record_water(update.message.from_user, state)
-            newstate = state_main
-            reply = 'Принято!'
+            (state.hot, reply) = check_input_int(
+                    cmd, msg_enter_hot,
+                    f'Квартира {state.apt}, холодная вода {state.cold}, горячая вода {state.hot}, всё верно?')
         else:
-            newstate = StateWater()
-    else:
-        newstate = state_main
+            newstate = state_main
+            if cmd == cmd_yes:
+                record_water(update.message.from_user, state)
+                reply = 'Принято!'
+            else:
+                reply = 'Отменено!'
 
     keyboard = None
-    if newstate == state_main:
+    if newstate == state_main and state != state_main:
         keyboard = keyboard_main
     elif isinstance(newstate, StateWater):
         if newstate.is_last_step():
@@ -199,8 +222,25 @@ async def respond(update: Update, context: ContextTypes.DEFAULT_TYPE):
             keyboard = keyboard_cancel
     chat_state[chat_id] = newstate
 
-    if reply is not None:
-        await context.bot.send_message(chat_id = chat_id, text = reply, reply_markup = keyboard)
+    await send_recursive(context, chat_id, keyboard, reply)
+
+async def send_recursive(context: ContextTypes.DEFAULT_TYPE, chat_id, markup, reply):
+    if reply is None:
+        return
+    elif isinstance(reply, str):
+        await context.bot.send_message(chat_id = chat_id, text = reply, reply_markup = markup)
+    elif isinstance(reply, list):
+        for ir, r in enumerate(reply):
+            m = markup if ir + 1 == len(reply) else None # attach markup only to the last message
+            await send_recursive(context, chat_id, m, r)
+    elif isinstance(reply, PhotoReply):
+        photo = open(reply.path, 'rb')
+        await context.bot.send_photo(chat_id, photo, reply_markup = markup)
+    elif isinstance(reply, DocReply):
+        doc = open(reply.path, 'rb')
+        await context.bot.send_document(chat_id, doc, reply_markup = markup)
+    else:
+        logging.info(f'unable to send an object of unsupported type: {reply}')
 
 if __name__ == '__main__':
     application = ApplicationBuilder().token(config['token']).build()

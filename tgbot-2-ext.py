@@ -36,7 +36,7 @@ class DocReply:
 cmd_contacts = '✉️ Связаться с нами'
 cmd_maint = '🏠Обслуживание дома'
 cmd_edc = '☎️ ЕДЦ ЖКХ'
-cmd_tariffs = '📃Тарифы 2023'
+cmd_tariffs = '📃Тарифы'
 cmd_domofon = '📲 Домофон'
 cmd_water_zayava = '📄Заявления в бухгалтерию по воде'
 cmd_water_meters = '💧Передать показания счетчиков воды'
@@ -47,8 +47,8 @@ cmd_no = 'Нет'
 msg_enter_apt = 'Номер квартиры:'
 msg_enter_cold = 'Холодная вода:'
 msg_enter_hot = 'Горячая вода:'
-msg_welcome = 'Поздравляем, Вы подписались на бот ЖСК Пятигорск!'
-msg_need_number = 'Нужно ввести число!'
+msg_welcome = 'Поздравляем, вы подписались на бот ЖСК Пятигорск!'
+msg_need_number = 'Введите число!'
 
 email = '3909322@mail.ru'
 
@@ -203,7 +203,7 @@ async def respond(update: Update, context: ContextTypes.DEFAULT_TYPE):
         elif state.hot is None:
             (state.hot, reply) = check_input_int(
                     cmd, msg_enter_hot,
-                    f'Квартира {state.apt}, холодная вода {state.cold}, горячая вода {state.hot}, всё верно?')
+                    f'Квартира {state.apt}, холодная вода {state.cold}, горячая вода {cmd.strip()}, всё верно?')
         else:
             newstate = state_main
             if cmd == cmd_yes:
@@ -211,6 +211,9 @@ async def respond(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 reply = 'Принято!'
             else:
                 reply = 'Отменено!'
+    else:
+        reply = 'Неизвестная команда'
+        keyboard = keyboard_main
 
     keyboard = None
     if newstate == state_main and state != state_main:

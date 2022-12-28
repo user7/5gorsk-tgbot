@@ -8,3 +8,14 @@
 
 нотификация об отправке или ошибках админу бота
 sqlite, сохранять неотправленную почту
+
+установка бота
+    sudo apt install pip
+    sudo apt install python3-venv
+    echo 'PATH=$PATH:/home/u/.local/bin' >> ~/.bash_aliases
+    mkdir -p  ~/.local/bin
+    python3 -m pip install --user --upgrade pip
+    cd target-dir
+    python3 -m venv env
+    source env/bin/activate
+

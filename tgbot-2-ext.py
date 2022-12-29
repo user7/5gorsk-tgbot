@@ -1,5 +1,6 @@
 import logging
 import json
+import re
 
 from telegram import Update
 from telegram import User
@@ -25,13 +26,21 @@ config = None
 with open('config.json', 'r', encoding = 'utf-8') as f:
     config = json.load(f)
 
-class PhotoReply:
-    def __init__(self, path):
-        self.path = path
-
 class DocReply:
     def __init__(self, path):
         self.path = path
+    def ext(self) -> str:
+        return re.search('\.[^.]+$', self.path).group().lower()
+    def is_photo(self) -> bool:
+        return self.ext() in ['.jpg', '.jpeg', '.png', '.gif']
+
+def docs(data):
+    if isinstance(data, str):
+        return DocReply(data)
+    elif isinstance(data, list):
+        return [docs(x) for x in data]
+    else:
+        raise RuntimeException(f'data must be a string or a list, got: {data}')
 
 cmd_contacts = '✉️ Связаться с нами'
 cmd_maint = '🏠Обслуживание дома'
@@ -49,6 +58,8 @@ msg_enter_cold = 'Холодная вода:'
 msg_enter_hot = 'Горячая вода:'
 msg_welcome = 'Поздравляем, вы подписались на бот ЖСК Пятигорск!'
 msg_need_number = 'Введите число!'
+msg_accepted = 'Принято!'
+msg_cancelled = 'Отменено!'
 
 email = '3909322@mail.ru'
 
@@ -82,7 +93,7 @@ msg_edc = [
 ]
 
 msg_tariffs = [
-    DocReply(config['tariffs']),
+    docs(config['tariffs']),
     '👩🏼‍🌾ГКУ ГЦЖС - http://www.subsident.ru/ Вся информация о субсидиях и льготах в сфере ЖКХ на территории Москвы.'
 ]
 
@@ -92,7 +103,7 @@ msg_domofon = f'''
 '''.strip()
 
 msg_water_zayava = [
-    [DocReply(f) for f in config['zayavas']],
+    docs(config['zayavas']),
     f'''
 ❗️Для тех, кто не проживает, или забывает подать показания, выше два бланка, которые необходимо предоставить в бухгалтерию.
 📥По почте {email} или в ящики Правления на 1-х этажах.📪
@@ -191,6 +202,9 @@ async def respond(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply = msg_domofon
     elif cmd == cmd_water_zayava:
         reply = msg_water_zayava
+    elif cmd == cmd_cancel:
+        reply = msg_cancelled
+        newstate = state_main
     elif cmd == cmd_water_meters:
         reply = msg_enter_apt
         newstate = StateWater()
@@ -208,15 +222,15 @@ async def respond(update: Update, context: ContextTypes.DEFAULT_TYPE):
             newstate = state_main
             if cmd == cmd_yes:
                 record_water(update.message.from_user, state)
-                reply = 'Принято!'
+                reply = msg_accepted
             else:
-                reply = 'Отменено!'
+                reply = msg_cancelled
     else:
+        newstate = state_main
         reply = 'Неизвестная команда'
-        keyboard = keyboard_main
 
     keyboard = None
-    if newstate == state_main and state != state_main:
+    if newstate == state_main:
         keyboard = keyboard_main
     elif isinstance(newstate, StateWater):
         if newstate.is_last_step():
@@ -236,12 +250,12 @@ async def send_recursive(context: ContextTypes.DEFAULT_TYPE, chat_id, markup, re
         for ir, r in enumerate(reply):
             m = markup if ir + 1 == len(reply) else None # attach markup only to the last message
             await send_recursive(context, chat_id, m, r)
-    elif isinstance(reply, PhotoReply):
-        photo = open(reply.path, 'rb')
-        await context.bot.send_photo(chat_id, photo, reply_markup = markup)
     elif isinstance(reply, DocReply):
         doc = open(reply.path, 'rb')
-        await context.bot.send_document(chat_id, doc, reply_markup = markup)
+        if reply.is_photo():
+            await context.bot.send_photo(chat_id, doc, reply_markup = markup)
+        else:
+            await context.bot.send_document(chat_id, doc, reply_markup = markup)
     else:
         logging.info(f'unable to send an object of unsupported type: {reply}')
 

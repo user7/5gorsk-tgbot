@@ -152,9 +152,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             text = msg_welcome,
             reply_markup = keyboard_main)
 
-def record_water(user, state):
+def make_full_name(user):
     good_names = [w for w in [user.first_name, user.last_name, f'(id {user.id})'] if w is not None]
-    full_name = ' '.join(good_names)
+    return ' '.join(good_names)
+
+def record_water(user, state):
+    full_name = make_full_name(user)
     try:
         email = config['email']
         host = email['host']
@@ -191,6 +194,9 @@ async def respond(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply = None
     newstate = state_main
 
+    logging.info('user={} command={}'.format(\
+            make_full_name(update.message.from_user),\
+            cmd if len(cmd) < 30 else cmd[0:30] + '...'))
     if cmd == cmd_contacts:
         reply = msg_contacts
     elif cmd == cmd_maint:

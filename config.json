@@ -1,0 +1,15 @@
+{
+    "token" : "5923913409:AAGhntuROgBDUDLpkLz3mYxnZ0OCdL4OMl8",
+    "admins": { "964632818" : 1 },
+    "email": {
+        "host" : "smtp.yandex.com",
+        "port" : 465,
+        "login" : "bot5gorsk@yandex.ru",
+        "pass" : "etqoolodonvamece",
+        "recepient" : "4953903782@mail.ru"
+    },
+    "zayavas" : [
+        "docs/fee-none.pdf",
+        "docs/fee-noЗабываю 2023.pdf"
+    ]
+}

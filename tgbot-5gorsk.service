@@ -1,0 +1,15 @@
+[Unit]
+Description=5gorsk telegram bot
+After=network.target
+
+[Service]
+Type=simple
+PIDFile=/run/5gorsk.pid
+ExecStart=/home/u/tgbot-5gorsk/source-prepare-env
+PrivateTmp=yes
+InaccessibleDirectories=/boot /media /mnt /opt /root
+ReadOnlyDirectories=/bin /etc /lib -/lib64 /sbin /usr /var
+DeviceAllow=/dev/null rw
+
+[Install]
+WantedBy=multi-user.target
